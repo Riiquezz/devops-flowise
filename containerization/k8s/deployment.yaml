@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowise
+  labels:
+    app: flowise
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flowise
+  template:
+    metadata:
+      labels:
+        app: flowise
+    spec:
+      containers:
+      - name: flowise
+        image: <your-dockerhub-repo>/flowise:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://<username>:<password>@<rds-endpoint>:5432/<database>"
+        - name: AWS_BUCKET
+          value: "<your-s3-bucket>"

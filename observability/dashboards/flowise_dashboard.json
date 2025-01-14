@@ -1,0 +1,28 @@
+{
+    "title": "Flowise Observability",
+    "widgets": [
+      {
+        "type": "timeseries",
+        "title": "CPU Usage",
+        "requests": [
+          {
+            "q": "avg:aws.ecs.service.cpuutilization{*}",
+            "display_type": "line"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "Memory Usage",
+        "requests": [
+          {
+            "q": "avg:aws.ecs.service.memoryutilization{*}",
+            "display_type": "line"
+          }
+        ]
+      }
+    ],
+    "layout_type": "ordered",
+    "is_read_only": false
+  }
+  
