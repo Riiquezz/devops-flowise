@@ -47,10 +47,27 @@ Bem-vindo ao projeto de infraestrutura para IA utilizando o Flowise! Este projet
 
 ---
 
+## **Pré-requisitos**
+Antes de iniciar, certifique-se de ter os seguintes itens instalados e configurados:
+
+1. **Ferramentas:**
+   - Terraform (v1.4 ou superior)
+   - Docker
+   - AWS CLI configurado com as credenciais
+   - `kubectl` configurado para acessar o cluster Kubernetes
+
+2. **Permissões:**
+   - Acesso à AWS com permissões para gerenciar VPC, EKS, RDS, S3, WAF e outros recursos.
+
+---
+
 ## **Como Iniciar o Projeto**
 
 ### **1. Configurar Variáveis**
-- Atualize o arquivo `terraform.tfvars` com os valores adequados para seu ambiente.
+- Se o pipeline CI/CD já está configurado, o arquivo `terraform.tfvars` será gerado automaticamente.
+- Caso precise configurar manualmente:
+  1. Crie o arquivo `iac/terraform/terraform.tfvars`.
+  2. Adicione as variáveis do seu ambiente (exemplo na documentação do Terraform).
 
 ### **2. Provisionar Infraestrutura**
 - Inicialize o Terraform:
@@ -72,16 +89,35 @@ Bem-vindo ao projeto de infraestrutura para IA utilizando o Flowise! Este projet
   docker build -t <seu-repo>/flowise:latest .
   docker push <seu-repo>/flowise:latest
   ```
+- Certifique-se de que o contexto do cluster Kubernetes está configurado:
+  ```bash
+  aws eks update-kubeconfig --region <AWS_REGION> --name <CLUSTER_NAME>
+  ```
 - Aplique os manifestos Kubernetes:
   ```bash
   kubectl apply -f containerization/k8s/
   ```
 
 ### **4. Monitoramento e Observabilidade**
+- Execute o script de deploy do dashboard no Datadog:
+  ```bash
+  bash observability/deploy_dashboard.sh
+  ```
 - Acesse o Datadog para visualizar dashboards e logs configurados.
 
 ### **5. Recuperação de Desastres**
 - Consulte o documento `docs/backup-recovery.md` para detalhes sobre como restaurar dados e infraestrutura.
+
+---
+
+## **Gerenciando Múltiplos Ambientes**
+O pipeline CI/CD suporta múltiplos ambientes (ex.: staging e production). Certifique-se de configurar as variáveis necessárias no repositório:
+- `EKS_CLUSTER_NAME`
+- `RDS_PASSWORD`
+- `DATADOG_API_KEY`
+- E outras listadas no arquivo de exemplo `terraform.tfvars`.
+
+Para alterar o ambiente, edite a matriz no pipeline CI/CD.
 
 ---
 
@@ -92,4 +128,3 @@ Sinta-se à vontade para contribuir com melhorias para este projeto! Envie um pu
 
 ## **Licença**
 Este projeto está licenciado sob a Licença MIT. Consulte o arquivo `LICENSE` para mais detalhes.
-

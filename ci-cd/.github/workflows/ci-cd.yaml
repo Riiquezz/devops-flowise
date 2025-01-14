@@ -19,13 +19,71 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        docker build -t <your-dockerhub-repo>/flowise:latest .
-        docker push <your-dockerhub-repo>/flowise:latest
+        docker build -t ${{ secrets.DOCKERHUB_REPO }}/flowise:${{ github.sha }} .
+        docker push ${{ secrets.DOCKERHUB_REPO }}/flowise:${{ github.sha }}
+
+  generate-tfvars:
+    name: Generate terraform.tfvars
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Generate terraform.tfvars
+      run: |
+        cat <<EOF > iac/terraform/terraform.tfvars
+        region              = "${{ secrets.AWS_REGION }}"
+        environment         = "${{ matrix.environment }}"
+        vpc_cidr            = "10.0.0.0/16"
+        public_subnets      = ["10.0.1.0/24", "10.0.2.0/24"]
+        private_subnets     = ["10.0.3.0/24", "10.0.4.0/24"]
+        eks_cluster_name    = "${{ secrets.EKS_CLUSTER_NAME }}-${{ matrix.environment }}"
+        eks_node_instance_type = "t3.medium"
+        eks_node_count_min  = 2
+        eks_node_count_max  = 5
+        rds_instance_class  = "db.t3.micro"
+        rds_allocated_storage = 20
+        rds_db_name         = "flowise_db"
+        rds_username        = "admin"
+        rds_password        = "${{ secrets.RDS_PASSWORD }}"
+        s3_bucket_name      = "flowise-artifacts-${{ matrix.environment }}"
+        waf_name            = "flowise-waf-${{ matrix.environment }}"
+        datadog_api_key     = "${{ secrets.DATADOG_API_KEY }}"
+        datadog_app_key     = "${{ secrets.DATADOG_APP_KEY }}"
+        load_balancer_name  = "flowise-alb-${{ matrix.environment }}"
+        EOF
+
+  terraform:
+    name: Apply Terraform Infrastructure
+    runs-on: ubuntu-latest
+    needs: generate-tfvars
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: iac/terraform
+
+    - name: Terraform Plan
+      run: terraform plan -var-file=terraform.tfvars
+      working-directory: iac/terraform
+
+    - name: Terraform Apply
+      run: terraform apply -var-file=terraform.tfvars -auto-approve
+      working-directory: iac/terraform
 
   deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, terraform]
 
     steps:
     - name: Checkout Code
@@ -54,5 +112,9 @@ jobs:
 
     - name: Check RDS Connection
       run: |
-        pg_isready -h <rds-endpoint> -U <username>
+        pg_isready -h ${{ secrets.RDS_ENDPOINT }} -U ${{ secrets.RDS_USERNAME }}
 
+  matrix:
+    environment:
+      - staging
+      - production
