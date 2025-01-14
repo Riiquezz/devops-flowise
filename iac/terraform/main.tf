@@ -1,7 +1,15 @@
+# Provedor AWS Primário (para a região principal)
 provider "aws" {
   region = var.aws_region
 }
 
+# Provedor AWS Secundário (para a região secundária)
+provider "aws" {
+  alias  = "secondary"
+  region = var.rds_secondary_region  # Região secundária para replicação do RDS
+}
+
+# Módulo VPC
 module "vpc" {
   source               = "./modules/vpc"
   cidr_block           = var.vpc_cidr_block
@@ -10,6 +18,7 @@ module "vpc" {
   availability_zones   = var.availability_zones
 }
 
+# Módulo EKS
 module "eks" {
   source           = "./modules/eks"
   cluster_name     = var.eks_cluster_name
@@ -20,33 +29,32 @@ module "eks" {
   min_capacity     = var.eks_min_capacity
 }
 
+# Módulo RDS - Banco de Dados com Réplica Multi-Region
 module "rds" {
-  source              = "./modules/rds"
-  vpc_id              = module.vpc.vpc_id
-  subnet_ids          = module.vpc.private_subnet_ids
-  db_name             = var.rds_db_name
-  username            = var.rds_username
-  password            = var.rds_password
-  allowed_cidr_blocks = var.rds_allowed_cidr_blocks
+  source               = "./modules/rds"
+  primary_vpc_id       = module.vpc.vpc_id
+  primary_subnet_ids   = module.vpc.private_subnet_ids
+  db_name              = var.rds_db_name
+  username             = var.rds_username
+  password             = var.rds_password
+  allocated_storage    = var.rds_allocated_storage
+  allowed_cidr_blocks  = var.rds_allowed_cidr_blocks
+  secondary_region     = var.rds_secondary_region
+  secondary_vpc_id     = var.secondary_vpc_id
+  secondary_subnet_ids = var.secondary_subnet_ids
 }
 
+# Módulo S3 - Bucket Primário e Replica Multi-Region
 module "s3" {
-  source      = "./modules/s3"
-  bucket_name = var.s3_bucket_name
+  source             = "./modules/s3"
+  bucket_name        = var.s3_bucket_name
+  replica_bucket_arn = var.s3_replica_bucket_arn
 }
 
-module "datadog" {
-  source = "./modules/datadog"
-
-  datadog_api_key         = var.datadog_api_key
-  datadog_app_key         = var.datadog_app_key
-  aws_account_id          = var.aws_account_id
-  datadog_integration_role = var.datadog_integration_role
-}
-
+# Módulo WAF
 module "waf" {
   source = "./modules/waf"
 
   waf_name     = "flowise-waf"
-  resource_arn = aws_lb.main.arn
+  resource_arn = aws_lb.main.arn  # Se precisar de um load balancer, substitua isso
 }

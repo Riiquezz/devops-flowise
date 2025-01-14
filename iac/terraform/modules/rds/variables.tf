@@ -1,30 +1,50 @@
-variable "vpc_id" {
-  description = "VPC ID for the RDS instance"
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "List of subnet IDs"
-  type        = list(string)
-}
-
 variable "db_name" {
-  description = "Database name"
+  description = "Name of the RDS database"
   type        = string
 }
 
 variable "username" {
-  description = "Database username"
+  description = "Username for the RDS database"
   type        = string
 }
 
 variable "password" {
-  description = "Database password"
+  description = "Password for the RDS database"
   type        = string
 }
 
+variable "allocated_storage" {
+  description = "Allocated storage for RDS"
+  type        = number
+  default     = 20
+}
+
 variable "allowed_cidr_blocks" {
-  description = "List of allowed CIDR blocks for RDS access"
+  description = "CIDR blocks allowed to access RDS"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+}
+
+variable "primary_vpc_id" {
+  description = "VPC ID for primary region"
+  type        = string
+}
+
+variable "primary_subnet_ids" {
+  description = "Subnet IDs for primary region"
+  type        = list(string)
+}
+
+variable "secondary_region" {
+  description = "Secondary region for RDS"
+  type        = string
+}
+
+variable "secondary_vpc_id" {
+  description = "VPC ID for secondary region"
+  type        = string
+}
+
+variable "secondary_subnet_ids" {
+  description = "Subnet IDs for secondary region"
+  type        = list(string)
 }

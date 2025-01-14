@@ -1,5 +1,5 @@
-resource "aws_db_instance" "main" {
-  allocated_storage      = 20
+resource "aws_db_instance" "primary" {
+  allocated_storage      = var.allocated_storage
   engine                 = "postgres"
   engine_version         = "13.4"
   instance_class         = "db.t3.micro"
@@ -12,12 +12,40 @@ resource "aws_db_instance" "main" {
   publicly_accessible = false
 
   tags = {
-    Name = "flowise-rds"
+    Name = "primary-rds"
   }
 }
 
-resource "aws_security_group" "rds" {
-  vpc_id = var.vpc_id
+resource "aws_db_snapshot" "primary_snapshot" {
+  db_instance_identifier = aws_db_instance.primary.id
+  db_snapshot_identifier = "${var.db_name}-snapshot"
+}
+
+provider "aws" {
+  alias  = "secondary"
+  region = var.secondary_region
+}
+
+resource "aws_db_instance" "secondary" {
+  provider                = aws.secondary
+  allocated_storage       = var.allocated_storage
+  engine                  = "postgres"
+  engine_version          = "13.4"
+  instance_class          = "db.t3.micro"
+  snapshot_identifier     = aws_db_snapshot.primary_snapshot.id
+  vpc_security_group_ids  = [aws_security_group.rds_secondary.id]
+  db_subnet_group_name    = aws_db_subnet_group.secondary.name
+
+  publicly_accessible = false
+
+  tags = {
+    Name = "secondary-rds"
+  }
+}
+
+resource "aws_security_group" "rds_secondary" {
+  provider = aws.secondary
+  vpc_id   = var.secondary_vpc_id
 
   ingress {
     from_port   = 5432
@@ -34,15 +62,12 @@ resource "aws_security_group" "rds" {
   }
 }
 
-resource "aws_db_subnet_group" "main" {
-  name       = "rds-subnet-group"
-  subnet_ids = var.subnet_ids
+resource "aws_db_subnet_group" "secondary" {
+  provider   = aws.secondary
+  name       = "rds-secondary-subnet-group"
+  subnet_ids = var.secondary_subnet_ids
 
   tags = {
-    Name = "rds-subnet-group"
+    Name = "rds-secondary-subnet-group"
   }
-}
-
-output "endpoint" {
-  value = aws_db_instance.main.endpoint
 }

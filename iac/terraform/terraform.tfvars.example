@@ -1,34 +1,28 @@
-# Variáveis Gerais
-region              = "us-east-1"
-environment         = "production"
+aws_region           = "us-east-1"
+rds_secondary_region = "us-west-2"
 
-# Variáveis do VPC
-vpc_cidr            = "10.0.0.0/16"
-public_subnets      = ["10.0.1.0/24", "10.0.2.0/24"]
-private_subnets     = ["10.0.3.0/24", "10.0.4.0/24"]
+vpc_cidr_block       = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.3.0/24", "10.0.4.0/24"]
+availability_zones   = ["us-east-1a", "us-east-1b"]
 
-# Variáveis do EKS
-eks_cluster_name    = "flowise-cluster"
-eks_node_instance_type = "t3.medium"
-eks_node_count_min  = 2
-eks_node_count_max  = 5
+eks_cluster_name     = "flowise-cluster"
+eks_desired_capacity = 2
+eks_max_capacity     = 5
+eks_min_capacity     = 1
 
-# Variáveis do RDS
-rds_instance_class  = "db.t3.micro"
+rds_db_name          = "flowise_db"
+rds_username         = "admin"
+rds_password         = "SuperSecretPassword"
 rds_allocated_storage = 20
-rds_db_name         = "flowise_db"
-rds_username        = "admin"
-rds_password        = "SuperSecretPassword123" # Substituir por um melhor
+rds_allowed_cidr_blocks = ["0.0.0.0/0"]
 
-# Variáveis do S3
-s3_bucket_name      = "flowise-artifacts-prod"
+s3_bucket_name       = "flowise-main-bucket"
+s3_replica_bucket_arn = "arn:aws:s3:::flowise-replica-bucket"
 
-# Variáveis do WAF
-waf_name            = "flowise-waf"
+waf_name             = "flowise-waf"
 
-# Variáveis do Datadog
-datadog_api_key     = "YOUR_DATADOG_API_KEY"
-datadog_app_key     = "YOUR_DATADOG_APP_KEY"
-
-# Outros
-load_balancer_name  = "flowise-alb"
+datadog_api_key      = "your-datadog-api-key"
+datadog_app_key      = "your-datadog-app-key"
+aws_account_id       = "your-aws-account-id"
+datadog_integration_role = "DatadogIntegrationRole"
